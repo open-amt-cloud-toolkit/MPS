@@ -67,10 +67,12 @@ export class webServer {
       this.app.use((req, res, next) => {
         // Clickjacking defence
         res.setHeader('X-Frame-Options', 'SAMEORIGIN')
-        
+        const allowedOrigins: string[]= this.config.cors_origin.split(',').map((domain) => {
+          return domain.trim()
+        })
           res.header('Access-Control-Allow-Credentials', 'true')
-          if (this.config.cors_origin != null && this.config.cors_origin !== '') {
-            res.setHeader('Access-Control-Allow-Origin', this.config.cors_origin)
+          if (allowedOrigins.includes(req.headers.origin)) {
+            res.setHeader('Access-Control-Allow-Origin', req.headers.origin)
           }else{
             res.setHeader('Access-Control-Allow-Origin', "*")
           }

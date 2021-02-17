@@ -4,7 +4,7 @@
 #*********************************************************************/
 #Multistage docker layer to isolate the git credentials
 #First stage copy and install dependencies
-ARG BASE=node:12.19
+ARG BASE=node:14-buster-slim
 FROM ${BASE} as builder
 
 WORKDIR /mps-microservice
