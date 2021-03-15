@@ -6,7 +6,7 @@
 
 import { Consul } from "./consul"
 import { configType } from "../models/Config";
-import { mpsMicroservice } from "../mpsMicroservice";
+import { MPSMicroservice } from "../mpsMicroservice";
 
 export interface IDistributedKV {
     // Method to fetch the value from the key passed as arg
@@ -17,7 +17,7 @@ export interface IDistributedKV {
 }
 
 // Factory method to create Distributed Key/Value pair class object
-export function getDistributedKV(mpsservice: mpsMicroservice): IDistributedKV {
+export function getDistributedKV(mpsservice: MPSMicroservice): IDistributedKV {
     // Create object for HashiCorp Consul
     if (mpsservice.config.distributed_kv_name === 'HashiCorpConsul') {
         return Consul.createObject(mpsservice);

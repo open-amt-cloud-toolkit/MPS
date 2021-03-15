@@ -5,7 +5,7 @@
 
 import { httpErrorTable } from './constants'
 
-export const ErrorResponse = (status: number, errDesc?: string, error?: string) => {
+export const ErrorResponse = (status: number, errDesc?: string, error?: string): any => {
   let response
   if (error) {
     const errorMessage = httpErrorTable[status]

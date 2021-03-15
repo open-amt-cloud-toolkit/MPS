@@ -76,6 +76,8 @@ typings/
 
 #Visual Studio Code
 .vs
+.vscode
 
 # out/ folder
 out/
+*.exe

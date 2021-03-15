@@ -11,7 +11,6 @@
 
 import * as net from 'net'
 import * as tls from 'tls'
-import * as path from 'path'
 import express from 'express'
 import * as https from 'https'
 import * as http from 'http'
@@ -19,13 +18,14 @@ import * as parser from 'body-parser'
 
 import session from 'express-session'
 
-import { configType, certificatesType } from '../models/Config'
-import { amtRoutes } from '../routes/amtRoutes'
-import { adminRoutes } from '../routes/adminRoutes'
+import { configType, certificatesType, queryParams } from '../models/Config'
+import { AMTRoutes } from '../routes/amtRoutes'
+import { AdminRoutes } from '../routes/adminRoutes'
+import router from '../routes/index'
 import { ErrorResponse } from '../utils/amtHelper'
 import { logger as log } from '../utils/logger'
-import { constants, UUIDRegex } from '../utils/constants'
-import { mpsMicroservice } from '../mpsMicroservice'
+import { constants } from 'crypto'
+import { MPSMicroservice } from '../mpsMicroservice'
 import { IDbProvider } from '../models/IDbProvider'
 import { APFProtocol } from '../models/Mps'
 import { common } from '../utils/constants'
@@ -43,12 +43,12 @@ export class webServer {
   server = null;
   notificationwss = null;
   relaywss = null;
-  mpsService: mpsMicroservice;
+  mpsService: MPSMicroservice;
   config: configType;
   certs: certificatesType;
   sessionParser: any;
 
-  constructor(mpsService: mpsMicroservice) {
+  constructor(mpsService: MPSMicroservice) {
     try {
       this.mpsService = mpsService
       this.db = this.mpsService.db
@@ -57,8 +57,8 @@ export class webServer {
       this.app = express()
       this.notificationwss = new WebSocket.Server({ noServer: true })
       this.relaywss = new WebSocket.Server({ noServer: true })
-      const amt = new amtRoutes(this.mpsService)
-      const admin = new adminRoutes(this.mpsService)
+      const amt = new AMTRoutes(this.mpsService)
+      const admin = new AdminRoutes(this.mpsService)
 
       // Create Server
       const appConfig = this.config
@@ -68,21 +68,32 @@ export class webServer {
         this.server = http.createServer(this.app)
       }
 
-      // Clickjacking defence
       this.app.use((req, res, next) => {
-        if (this.config.auth_enabled) {
-          res.setHeader('X-Frame-Options', 'SAMEORIGIN')
-          next()
+        // Clickjacking defence
+        res.setHeader('X-Frame-Options', 'SAMEORIGIN')
+        const allowedOrigins: string[] = this.config.cors_origin.split(',').map((domain) => {
+          return domain.trim()
+        })
+        res.header('Access-Control-Allow-Credentials', 'true')
+        if (allowedOrigins.includes(req.headers.origin)) {
+          res.setHeader('Access-Control-Allow-Origin', req.headers.origin)
         } else {
-          // DO NOT SET AUTH_ENABLED=FALSE IN PROD
-          res.header('Access-Control-Allow-Origin', '*')
-          res.header('Access-Control-Allow-Headers', '*')
-          if (req.method === 'OPTIONS') {
-            res.header('Access-Control-Allow-Methods', '*')
-            return res.status(200).json({})
-          }
-          next()
+          res.setHeader('Access-Control-Allow-Origin', '*')
         }
+        if (this.config.cors_headers != null && this.config.cors_headers !== '') {
+          res.setHeader('Access-Control-Allow-Headers', this.config.cors_headers)
+        } else {
+          res.setHeader('Access-Control-Allow-Headers', '*')
+        }
+        if (req.method === 'OPTIONS') {
+          if (this.config.cors_methods != null && this.config.cors_methods !== '') {
+            res.setHeader('Access-Control-Allow-Methods', this.config.cors_methods)
+          } else {
+            res.setHeader('Access-Control-Allow-Methods', '*')
+          }
+          return res.status(200).end()
+        }
+        next()
       })
 
       //Session Configuration
@@ -93,7 +104,6 @@ export class webServer {
         this.app.set('trust proxy', 1) // trust first proxy
         sess.cookie.secure = true // serve secure cookies
         sess.cookie.maxAge = 24 * 60 * 60 * 1000 // limiting cookie age to a day.
-        sess.cookie.sameSite = true // strictly same site
       }
       // Initialize session
       this.sessionParser = session(sess)
@@ -131,7 +141,7 @@ export class webServer {
         if (request.session) {
           request.session.destroy()
         }
-        response.redirect('/')
+        response.status(200).end()
       })
 
       // Console connects to this websocket for a persistent connection
@@ -153,13 +163,13 @@ export class webServer {
       this.relaywss.on('connection', async (ws, req) => {
         try {
           const base = `${this.config.https ? 'https' : 'http'}://${this.config.common_name}:${this.config.web_port}/`
-          const req_query_url = new URL(req.url, base)
-          req.query = {
-            host: req_query_url.searchParams.get('host'),
-            port: req_query_url.searchParams.get('port'),
-            p: req_query_url.searchParams.get('p'),
-            tls: req_query_url.searchParams.get('tls'),
-            tls1only: req_query_url.searchParams.get('tls1only')
+          const reqQueryURL = new URL(req.url, base)
+          const params: queryParams = {
+            host: reqQueryURL.searchParams.get('host'),
+            port: Number(reqQueryURL.searchParams.get('port')),
+            p: Number(reqQueryURL.searchParams.get('p')),
+            tls: Number(reqQueryURL.searchParams.get('tls')),
+            tls1only: Number(reqQueryURL.searchParams.get('tls1only'))
           }
           ws._socket.pause()
           // console.log('Socket paused', ws._socket);
@@ -190,7 +200,9 @@ export class webServer {
                 ws.forwardclient.close()
               }
               try {
-                if (ws.forwardclient.destroy) { ws.forwardclient.destroy() }
+                if (ws.forwardclient.destroy) {
+                  ws.forwardclient.destroy()
+                }
               } catch (e) {
                 log.error(`Exception while destroying AMT CIRA channel: ${e}`)
               }
@@ -203,19 +215,19 @@ export class webServer {
           )
 
           // Fetch Intel AMT credentials & Setup interceptor
-          const credentials = await this.db.getAmtPassword(req.query.host)
-          // obj.debug("Credential for " + req.query.host + " is " + JSON.stringify(credentials));
+          const credentials = await this.db.getAmtPassword(params.host)
+          // obj.debug("Credential for " + params.host + " is " + JSON.stringify(credentials));
 
           if (credentials != null) {
             log.silly("Creating credential")
             if (req.query.p == 1) {
               ws.interceptor = interceptor.CreateHttpInterceptor({
-                host: req.query.host,
-                port: req.query.port,
+                host: params.host,
+                port: params.port,
                 user: credentials[0],
                 pass: credentials[1]
               })
-            } else if (req.query.p == 2) {
+            } else if (params.p === 2) {
               ws.interceptor = interceptor.CreateRedirInterceptor({
                 user: credentials[0],
                 pass: credentials[1]
@@ -223,7 +235,7 @@ export class webServer {
             }
           }
 
-          if (req.query.tls == 0) {
+          if (params.tls === 0) {
             // If this is TCP (without TLS) set a normal TCP socket
             // check if this is MPS connection
             const uuid = req.query.host
@@ -247,7 +259,7 @@ export class webServer {
                 }
               }
 
-              ws.forwardclient.onStateChange = (ciraconn, state) => {
+              ws.forwardclient.onStateChange = (ciraconn, state):void => {
                 //console.log('Relay CIRA state change:'+state);
                 log.silly(`stateChanged to ${state}`)
                 if (state == 0) {
@@ -271,7 +283,7 @@ export class webServer {
             log.info('TLS Enabled!')
             const tlsoptions = {
               secureProtocol:
-                req.query.tls1only == 1 ? 'TLSv1_method' : 'SSLv23_method',
+                params.tls1only === 1 ? 'TLSv1_method' : 'SSLv23_method',
               ciphers: 'RSA+AES:!aNULL:!MD5:!DSS',
               secureOptions:
                 constants.SSL_OP_NO_SSLv2 |
@@ -281,8 +293,8 @@ export class webServer {
               rejectUnauthorized: false
             }
             ws.forwardclient = tls.connect(
-              req.query.port,
-              req.query.host,
+              params.port,
+              params.host,
               tlsoptions,
               () => {
                 // The TLS connection method is the same as TCP, but located a bit differently.
@@ -313,7 +325,7 @@ export class webServer {
             // If the TCP connection closes, disconnect the associated web socket.
             ws.forwardclient.on('close', () => {
               log.debug(
-                `TCP disconnected from ${req.query.host} : ${req.query.port}.`
+                `TCP disconnected from ${params.host} : ${params.port}.`
               )
               try {
                 ws.close()
@@ -323,8 +335,8 @@ export class webServer {
             // If the TCP connection causes an error, disconnect the associated web socket.
             ws.forwardclient.on('error', err => {
               log.debug(
-                `TCP disconnected with error from ${req.query.host}:${
-                req.query.port
+                `TCP disconnected with error from ${params.host}:${
+                  params.port
                 }:${err.code},${req.url}`
               )
               try {
@@ -333,8 +345,8 @@ export class webServer {
             })
           }
 
-          if (req.query.tls == 0) {
-            if (!this.mpsService.mpsComputerList[req.query.host]) {
+          if (params.tls === 0) {
+            if (!this.mpsService.mpsComputerList[params.host]) {
               // A TCP connection to Intel AMT just connected, send any pending data and start forwarding.
               ws.forwardclient.connect(req.query.port, req.query.host, () => {
                 log.silly(`TCP connected to ${req.query.host}:${req.query.port}.`)
@@ -348,22 +360,23 @@ export class webServer {
       })
 
       // Validates GUID format
-      this.app.use((req, res, next) => {
-        const method = req.body.method
-        const payload = req.body.payload || {}
-        if (method) {
-          if (payload && payload.guid !== undefined) {
-            if (!UUIDRegex.test(payload.guid)) {
-              return res.status(404).send(ErrorResponse(404, null, 'invalidGuid'))
-            }
-          }
-          next()
-        } else {
-          return res.status(404).send(ErrorResponse(404, null, 'method'))
-        }
-      })
+      // this.app.use((req, res, next) => {
+      //   const method = req.body.method
+      //   const payload = req.body.payload || {}
+      //   if (method) {
+      //     if (payload?.guid !== undefined) {
+      //       if (!UUIDRegex.test(payload.guid)) {
+      //         return res.status(404).send(ErrorResponse(404, null, 'invalidGuid'))
+      //       }
+      //     }
+      //     next()
+      //   } else {
+      //     return res.status(404).send(ErrorResponse(404, null, 'method'))
+      //   }
+      // })
 
       // Routes
+      this.app.use('/devices', this.isAuthenticated, router)
       this.app.use('/amt', this.isAuthenticated, amt.router)
       this.app.use('/admin', this.isAuthenticated, admin.router)
 
@@ -372,12 +385,7 @@ export class webServer {
         this.sessionParser(request, {}, () => {
           if (!this.config.auth_enabled || (request.session && request.session.loggedin === true)) { // Validate if the user session is active and valid. TODO: Add user validation if needed
             this.handleUpgrade(request, socket, head)
-          }
-          // else if (request.headers['X-MPS-API-Key'] && //Validate REST API key
-          //   request.headers['X-MPS-API-Key'] === this.config.mpsxapikey) {
-          //   this.handleUpgrade(request, socket, head)
-          // }
-          else { // Auth failed
+          } else { // Auth failed
             log.error('WebSocket authentication failed. Closing connection...')
             socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n')
             socket.destroy()
@@ -396,7 +404,7 @@ export class webServer {
 
       // Start the ExpressJS web server
       if (this.config.https) {
-        if (this.config.listen_any && this.config.listen_any == true) {
+        if (this.config.listen_any && this.config.listen_any) {
           this.server.listen(port, () => {
             log.info(
               `Web Microservice running on https://${
@@ -411,7 +419,7 @@ export class webServer {
           })
         }
       } else {
-        if (this.config.listen_any && this.config.listen_any == true) {
+        if (this.config.listen_any && this.config.listen_any) {
           this.server.listen(port, () => {
             log.info(
               `Web Microservice running on http://${
@@ -431,17 +439,17 @@ export class webServer {
   }
 
   // Authentication for REST API and Web User login
-  isAuthenticated = (req, res, next) => {
+  isAuthenticated = (req, res, next): void => {
     if (!this.config.auth_enabled || req.session.loggedin) {
-      return next()
+      next()
+      return
     }
 
     if (req.header('User-Agent').startsWith('Mozilla')) {
       // all browser calls that are not authenticated
       if (
         // This is to handle REST API calls from browser.
-        req.method == 'POST' &&
-        (req.originalUrl.indexOf('/amt') >= 0 || req.originalUrl.indexOf('/admin') >= 0)
+        req.method === 'POST' && (req.originalUrl.indexOf('/amt') >= 0 || req.originalUrl.indexOf('/admin') >= 0)
       ) {
         res.status(401).end('Authentication failed or Login Expired. Please try logging in again.')
         return
@@ -453,11 +461,13 @@ export class webServer {
     // other api calls
     if (req.header('X-MPS-API-Key') !== this.config.mpsxapikey) {
       res.status(401).end('API key authentication failed. Please try again.')
-    } else { return next() }
+    } else {
+      next()
+    }
   }
 
   // Handle Upgrade - WebSocket
-  handleUpgrade(request, socket, head) {
+  handleUpgrade (request, socket, head): void {
     const base = `${this.config.https ? 'https' : 'http'}://${this.config.common_name}:${this.config.web_port}/`
     const pathname = (new URL(request.url, base)).pathname
     if (pathname === '/notifications/control.ashx') {
@@ -476,7 +486,7 @@ export class webServer {
   }
 
   // Notify clients connected through browser web socket
-  notifyUsers(msg) {
+  notifyUsers (msg): void {
     for (const i in this.users) {
       try {
         this.users[i].send(JSON.stringify(msg))

@@ -3,7 +3,7 @@ import { common } from '../../utils/constants'
 import { IMpsProxy } from './ImpsProxy'
 import { APFProtocol } from "../../models/Mps"
 import { getDistributedKV } from "../../utils/IDistributedKV"
-import { mpsMicroservice } from '../../mpsMicroservice'
+import { MPSMicroservice } from '../../mpsMicroservice'
 import { logger as log } from "../../utils/logger";
 
 const MPS_MESSAGE_HEADER_LENGTH = 85;
@@ -33,10 +33,10 @@ export class MpsProxy implements IMpsProxy {
   nodeid: any
   static sockets: any = {}
   static guidSockets: any = {}
-  mpsService: mpsMicroservice
+  mpsService: MPSMicroservice
   ciraChannel: any
   readyState: any
-  constructor(guid, mpsService: mpsMicroservice, socket) {
+  constructor(guid, mpsService: MPSMicroservice, socket) {
     this.mpsService = mpsService;
     this.socket = socket;
     //this.tag = { first: true, clientCert: null, accumulator: "", activetunnels: 0, boundPorts: [], host: null, nextchannelid: 4, channels: {}, nextsourceport: 0 };
@@ -312,7 +312,7 @@ export class MpsProxy implements IMpsProxy {
     }
   }
 
-  static async getSocketForGuid(hostGuid: string, mpsservice: mpsMicroservice) {
+  static async getSocketForGuid(hostGuid: string, mpsservice: MPSMicroservice) {
 
     // get MPS server IP
     let mpsServerIP: string = await getDistributedKV(mpsservice).lookup(hostGuid)
@@ -376,7 +376,7 @@ export class MpsProxy implements IMpsProxy {
     }
   }
 
-  static async get(mpsService: mpsMicroservice, guid: string) {
+  static async get(mpsService: MPSMicroservice, guid: string) {
     // get socket; talk to webProxy
     let socket = await MpsProxy.getSocketForGuid(guid, mpsService);
 

@@ -168,9 +168,7 @@ function CreateWsmanComm(host, port, user, pass, tls, parent) {
     function _OnSocketConnected() {
         obj.Silly("xxOnSocketConnected");
         obj.socketState = 2;
-            for (let i in obj.pendingAjaxCall) {
-                obj.sendRequest(obj.pendingAjaxCall[i][0], obj.pendingAjaxCall[i][3], obj.pendingAjaxCall[i][4]);
-            }
+        for (let i in obj.pendingAjaxCall) { obj.sendRequest(obj.pendingAjaxCall[i][0], obj.pendingAjaxCall[i][3], obj.pendingAjaxCall[i][4]); }
     }
 
     // Websocket relay specific private method

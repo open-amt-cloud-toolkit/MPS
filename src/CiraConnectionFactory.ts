@@ -1,4 +1,4 @@
-import { mpsMicroservice } from "./mpsMicroservice";
+import { MPSMicroservice } from "./mpsMicroservice";
 export class CiraConnectionFactory {
   factoryFn: (guid: any) => any
   constructor(factoryFn: (guid: any) => any ) {

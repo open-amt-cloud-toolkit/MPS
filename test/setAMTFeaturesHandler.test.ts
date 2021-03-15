@@ -7,9 +7,9 @@ import * as fs from 'fs'
 import * as path from 'path'
 
 import { certificatesType, configType } from '../src/models/Config'
-import { dataBase } from '../src/utils/db'
-import { mpsMicroservice } from '../src/mpsMicroservice'
-import { mpsServer } from '../src/server/mpsserver'
+import { Database } from '../src/utils/db'
+import { MPSMicroservice } from '../src/mpsMicroservice'
+import { MPSServer } from '../src/server/mpsserver'
 import { certificates } from '../src/utils/certificates'
 import { SetAMTFeaturesHandler } from '../src/controllers/AMT/SetAMTFeaturesHandler'
 import { MPSValidationError } from '../src/utils/MPSValidationError'
@@ -40,6 +40,10 @@ const config: configType = {
   web_admin_user: 'standalone',
   web_admin_password: 'G@ppm0ym',
   mpsxapikey: 'testapikey',
+  cors_origin:'*',
+  cors_headers:'*',
+  cors_methods:'*',
+  connection_string: '',
   mps_tls_config: {
     key: '../private/mpsserver-cert-private.key',
     cert: '../private/mpsserver-cert-public.crt',
@@ -60,9 +64,9 @@ const config: configType = {
 let certs : certificatesType
 const certPath = path.join(__dirname, 'private')
 const dbPath = path.join(__dirname, 'private')
-let db: dataBase
-let mpsService: mpsMicroservice
-let mps: mpsServer
+let db: Database
+let mpsService: MPSMicroservice
+let mps: MPSServer
 let amtFeatures: SetAMTFeaturesHandler
 
 describe('AMTFeaturesHandler', function () {
@@ -71,12 +75,12 @@ describe('AMTFeaturesHandler', function () {
     try {
       if (!fs.existsSync(certPath)) { fs.mkdirSync(certPath, { recursive: true }) }
     } catch (e) {
-      console.log(`Failed to create Cert path ${certPath}. Create if it doesnt exist`)
+      console.log(`Failed to create Cert path ${certPath}. Create if it doesn't exist`)
     }
     certs = await certificates.generateCertificates(config, certPath)
-    db = new dataBase(config)
-    mpsService = new mpsMicroservice(config, db, certs)
-    mps = new mpsServer(mpsService)
+    db = new Database(config)
+    mpsService = new MPSMicroservice(config, db, certs)
+    mps = new MPSServer(mpsService)
 
     amtFeatures = new SetAMTFeaturesHandler(mpsService)
   })

@@ -1,13 +1,17 @@
 {
-  "credentials" : {
+  "credentials": {
     "12345678-9abc-def1-2345-123456789000": {
-        "name" : "Sample-Device",
-        "mpsuser": "standalone",
-        "mpspass": "G@ppm0ym",
-        "amtuser": "admin",
-        "amtpass": "P@ssw0rd"
+      "name": "Sample-Device",
+      "mpsuser": "standalone",
+      "mpspass": "G@ppm0ym",
+      "amtuser": "admin",
+      "amtpass": "P@ssw0rd"
     }
   },
-  "allowlist_guids" : [ "12345678-9abc-def1-2345-123456789000" ],
-  "allowlist_orgs" : [ "12345678901234567890123456789012" ]
+  "allowlist_guids": [
+    "12345678-9abc-def1-2345-123456789000"
+  ],
+  "allowlist_orgs": [
+    "12345678901234567890123456789012"
+  ]
 }

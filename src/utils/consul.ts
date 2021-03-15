@@ -7,7 +7,7 @@
 import { configType } from "../models/Config";
 import { IDistributedKV } from './IDistributedKV'
 import { logger as log } from "./logger";
-import { mpsMicroservice } from "../mpsMicroservice";
+import { MPSMicroservice } from "../mpsMicroservice";
 import { MpsProxy } from "../server/proxies/MpsProxy";
 import * as os from "os";
 import { default_networking_adaptor } from "./constants";
@@ -15,20 +15,20 @@ import { default_networking_adaptor } from "./constants";
 // Class for HashiCorp consul
 export class Consul implements IDistributedKV {
     config: configType;
-    mpsService: mpsMicroservice;
+    mpsService: MPSMicroservice;
     private static instance: IDistributedKV = null;
     consul;
     connectedDevices: any = {};
     disconnectedDevices: any = {};
 
-    private constructor(mpsservice: mpsMicroservice) {
+    private constructor(mpsservice: MPSMicroservice) {
 
         this.config = mpsservice.config;
         this.mpsService = mpsservice;
         this.consul = require('consul')({ host: this.config.distributed_kv_ip, port: this.config.distributed_kv_port });
     }
 
-    static createObject(mpsservice: mpsMicroservice) {
+    static createObject(mpsservice: MPSMicroservice) {
         if (!Consul.instance) {
             log.silly('Create Consul Object')
             return Consul.instance = new Consul(mpsservice);

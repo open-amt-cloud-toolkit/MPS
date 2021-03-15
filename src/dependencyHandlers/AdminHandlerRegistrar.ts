@@ -7,16 +7,16 @@
 import { IAdminHandler } from '../models/IAdminHandler'
 
 export class AdminHandlerRegistrar {
-    adminHandlers: any;
-    constructor () {
-      this.adminHandlers = {}
-    }
+  adminHandlers: any
+  constructor () {
+    this.adminHandlers = {}
+  }
 
-    registerHandler (handler : IAdminHandler) : void {
-      this.adminHandlers[handler.name] = handler
-    }
+  registerHandler (handler: IAdminHandler): void {
+    this.adminHandlers[handler.name] = handler
+  }
 
-    getHandler (name : string) : IAdminHandler {
-      return this.adminHandlers[name]
-    }
+  getHandler (name: string): IAdminHandler {
+    return this.adminHandlers[name]
+  }
 }

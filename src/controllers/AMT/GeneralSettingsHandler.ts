@@ -7,23 +7,24 @@
 import { Response, Request } from 'express'
 import { logger as log } from '../../utils/logger'
 import { IAmtHandler } from '../../models/IAmtHandler'
-import { mpsMicroservice } from '../../mpsMicroservice'
+import { MPSMicroservice } from '../../mpsMicroservice'
 
-import { amtStackFactory, amtPort } from '../../utils/constants'
+import { amtPort } from '../../utils/constants'
+import AMTStackFactory from '../../amt_libraries/amt-connection-factory.js'
 import { ErrorResponse } from '../../utils/amtHelper'
 
 export class GeneralSettingsHandler implements IAmtHandler {
-  mpsService: mpsMicroservice;
-  name: string;
-  amtFactory: any;
+  mpsService: MPSMicroservice
+  name: string
+  amtFactory: any
 
-  constructor (mpsService: mpsMicroservice) {
+  constructor (mpsService: MPSMicroservice) {
     this.name = 'GeneralSettings'
     this.mpsService = mpsService
-    this.amtFactory = new amtStackFactory(this.mpsService)
+    this.amtFactory = new AMTStackFactory(this.mpsService)
   }
 
-  async AmtAction (req: Request, res: Response) {
+  async AmtAction (req: Request, res: Response): Promise<void> {
     try {
       const payload = req.body.payload
       if (payload.guid) {
@@ -35,24 +36,24 @@ export class GeneralSettingsHandler implements IAmtHandler {
             //obj.wsman.comm.socket.sendchannelclose()
             if (status == 200) {
               res.set({ 'Content-Type': 'application/json' })
-              return res.send(response)
+              res.send(response)
             } else {
               res.set({ 'Content-Type': 'application/json' })
               log.error(`Request failed during GET AMT_GeneralSettings for guid : ${payload.guid}.`)
-              return res.status(status).send(ErrorResponse(status, `Request failed during GET AMT_GeneralSettings for guid : ${payload.guid}.`))
+              res.status(status).send(ErrorResponse(status, `Request failed during GET AMT_GeneralSettings for guid : ${payload.guid}.`))
             }
           }, 0, 1)
         } else {
           res.set({ 'Content-Type': 'application/json' })
-          return res.status(404).send(ErrorResponse(404, `guid : ${payload.guid}`, 'device'))
+          res.status(404).send(ErrorResponse(404, `guid : ${payload.guid}`, 'device'))
         }
       } else {
         res.set({ 'Content-Type': 'application/json' })
-        return res.status(404).send(ErrorResponse(404, null, 'guid'))
+        res.status(404).send(ErrorResponse(404, null, 'guid'))
       }
     } catch (error) {
       log.error(`Exception in AMT GeneralSettings: ${error}`)
-      return res.status(500).send(ErrorResponse(500, 'Request failed during AMT GeneralSettings.'))
+      res.status(500).send(ErrorResponse(500, 'Request failed during AMT GeneralSettings.'))
     }
   }
 }

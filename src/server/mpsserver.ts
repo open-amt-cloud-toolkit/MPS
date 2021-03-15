@@ -25,7 +25,7 @@ import * as tls from 'tls'
 import { configType, certificatesType } from '../models/Config'
 import { APFProtocol, APFChannelOpenFailureReasonCode } from '../models/Mps'
 import { logger as log } from '../utils/logger'
-import { mpsMicroservice } from '../mpsMicroservice'
+import { MPSMicroservice } from '../mpsMicroservice'
 import { IDbProvider } from '../models/IDbProvider'
 
 const common = require('../utils/common.js')
@@ -46,7 +46,7 @@ const MPS_DEVICE_DISCONNECT_LENGTH = 77
 export class mpsServer {
 
   db: IDbProvider;
-  mpsService: mpsMicroservice;
+  mpsService: MPSMicroservice;
   config: configType;
   certs: certificatesType;
   ciraConnections = {};
@@ -55,7 +55,7 @@ export class mpsServer {
   onCiraDisconnect: any
   onCiraChannelClose: any
   allSockets: any
-  constructor(mpsService: mpsMicroservice) {
+  constructor(mpsService: MPSMicroservice) {
     this.mpsService = mpsService
     this.db = mpsService.db
     this.config = mpsService.config

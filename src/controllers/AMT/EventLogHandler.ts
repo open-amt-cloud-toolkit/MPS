@@ -7,23 +7,23 @@
 import { Response, Request } from 'express'
 import { logger as log } from '../../utils/logger'
 import { IAmtHandler } from '../../models/IAmtHandler'
-import { mpsMicroservice } from '../../mpsMicroservice'
-
-import { amtStackFactory, amtPort } from '../../utils/constants'
+import { MPSMicroservice } from '../../mpsMicroservice'
+import AMTStackFactory from '../../amt_libraries/amt-connection-factory.js'
+import { amtPort } from '../../utils/constants'
 import { ErrorResponse } from '../../utils/amtHelper'
 
 export class EventLogHandler implements IAmtHandler {
-  mpsService: mpsMicroservice;
-  name: string;
-  amtFactory: any;
+  mpsService: MPSMicroservice
+  name: string
+  amtFactory: any
 
-  constructor (mpsService: mpsMicroservice) {
+  constructor (mpsService: MPSMicroservice) {
     this.name = 'EventLog'
     this.mpsService = mpsService
-    this.amtFactory = new amtStackFactory(this.mpsService)
+    this.amtFactory = new AMTStackFactory(this.mpsService)
   }
 
-  async AmtAction (req: Request, res: Response) {
+  async AmtAction (req: Request, res: Response): Promise<void> {
     try {
       const payload = req.body.payload
       if (payload.guid) {
@@ -37,20 +37,20 @@ export class EventLogHandler implements IAmtHandler {
               return res.send(responses)
             } else {
               log.error(`Failed during GET MessageLog guid : ${payload.guid}.`)
-              return res.status(status).send(ErrorResponse(status, `Failed during GET MessageLog guid : ${payload.guid}.`))
+              res.status(status).send(ErrorResponse(status, `Failed during GET MessageLog guid : ${payload.guid}.`))
             }
           })
         } else {
           res.set({ 'Content-Type': 'application/json' })
-          return res.status(404).send(ErrorResponse(404, `guid : ${payload.guid}`, 'device'))
+          res.status(404).send(ErrorResponse(404, `guid : ${payload.guid}`, 'device'))
         }
       } else {
         res.set({ 'Content-Type': 'application/json' })
-        return res.status(404).send(ErrorResponse(404, null, 'guid'))
+        res.status(404).send(ErrorResponse(404, null, 'guid'))
       }
     } catch (error) {
       log.error(`Exception in AMT EventLog: ${error}`)
-      return res.status(500).send(ErrorResponse(500, 'Request failed during AMT EventLog.'))
+      res.status(500).send(ErrorResponse(500, 'Request failed during AMT EventLog.'))
     }
   }
 }

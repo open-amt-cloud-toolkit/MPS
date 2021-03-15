@@ -6,18 +6,17 @@
 
 import { RootContainer } from '../dependencyHandlers/RootContainer'
 import { ErrorResponse } from '../utils/amtHelper'
-import { logger as log } from '../utils/logger'
 import { Response, Request } from 'express'
 
 export class amtController {
-  static container: RootContainer;
+  static container: RootContainer
 
-  static init (mps) {
+  static init (mps): void {
     amtController.container = new RootContainer(mps)
     amtController.container.amtBuild()
   }
 
-  static async HandlePostRoute (req: Request, res: Response) {
+  static async HandlePostRoute (req: Request, res: Response): Promise<void> {
     const method = req.body.method || ''
     if (method) {
       const payload = req.body.payload || ''
@@ -26,13 +25,13 @@ export class amtController {
         if (handler) {
           await handler.AmtAction(req, res)
         } else {
-          return res.status(404).send(ErrorResponse(404, null, 'noMethod'))
+          res.status(404).send(ErrorResponse(404, null, 'noMethod'))
         }
       } else {
-        return res.status(404).send(ErrorResponse(404, null, 'payload'))
+        res.status(404).send(ErrorResponse(404, null, 'payload'))
       }
     } else {
-      return res.status(404).send(ErrorResponse(404, null, 'method'))
+      res.status(404).send(ErrorResponse(404, null, 'method'))
     }
   }
 }

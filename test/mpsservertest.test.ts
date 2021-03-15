@@ -11,9 +11,9 @@ import * as forge from 'node-forge'
 import { certificates } from '../src/utils/certificates'
 import { certificatesType, configType } from '../src/models/Config'
 import * as path from 'path'
-import { dataBase } from '../src/utils/db'
-import { mpsMicroservice } from '../src/mpsMicroservice'
-import { mpsServer } from '../src/server/mpsserver'
+import { Database } from '../src/utils/db'
+import { MPSMicroservice } from '../src/mpsMicroservice'
+import { MPSServer } from '../src/server/mpsserver'
 import { join } from 'path'
 
 // Parsing configuration
@@ -41,6 +41,10 @@ const config: configType = {
   web_admin_password: 'G@ppm0ym',
   session_encryption_key: 'key',
   mpsxapikey: 'testkey',
+  connection_string: '',
+  cors_origin:'*',
+  cors_headers:'*',
+  cors_methods:'*',
   mps_tls_config: {
     key: '../private/mpsserver-cert-private.key',
     cert: '../private/mpsserver-cert-public.crt',
@@ -61,9 +65,9 @@ const config: configType = {
 const pki = forge.pki
 let certs : certificatesType
 const certPath = config.cert_path
-let db: dataBase
-let mpsService: mpsMicroservice
-let mps: mpsServer
+let db: Database
+let mpsService: MPSMicroservice
+let mps: MPSServer
 
 describe('MPS Server', function () {
   let server
@@ -72,12 +76,12 @@ describe('MPS Server', function () {
     try {
       if (!fs.existsSync(certPath)) { fs.mkdirSync(certPath, { recursive: true }) }
     } catch (e) {
-      console.log(`Failed to create Cert path ${certPath}. Create if it doesnt exist`)
+      console.log(`Failed to create Cert path ${certPath}. Create if it doesn't exist`)
     }
     certs = await certificates.generateCertificates(config, certPath)
-    db = new dataBase(config)
-    mpsService = new mpsMicroservice(config, db, certs)
-    mps = new mpsServer(mpsService)
+    db = new Database(config)
+    mpsService = new MPSMicroservice(config, db, certs)
+    mps = new MPSServer(mpsService)
 
     // DB initialization
     server = mps

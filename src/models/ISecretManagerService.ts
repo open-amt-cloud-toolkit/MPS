@@ -6,9 +6,9 @@
  **********************************************************************/
 
 export interface ISecretManagerService {
-  getSecretFromKey(path: string, key: string) : Promise<string>;
-  readJsonFromKey(path: string, key: string) : Promise<string>;
-  getSecretAtPath(path: string): Promise<any>;
-  writeSecretWithKey(path: string, key:string, keyvalue: any) : Promise<void>;
-  listSecretsAtPath(path:string): Promise<any>;
+  getSecretFromKey: (path: string, key: string) => Promise<string>
+  readJsonFromKey: (path: string, key: string) => Promise<string>
+  getSecretAtPath: (path: string) => Promise<any>
+  writeSecretWithKey: (path: string, key: string, keyvalue: any) => Promise<void>
+  listSecretsAtPath: (path: string) => Promise<any>
 }

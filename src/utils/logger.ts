@@ -3,6 +3,7 @@
 * SPDX-License-Identifier: Apache-2.0
 **********************************************************************/
 
+import path from 'path'
 import * as winston from 'winston'
 
 const { combine, timestamp, printf } = winston.format
@@ -16,13 +17,13 @@ export const logger = winston.createLogger({
   transports: [
     new winston.transports.Console(),
     new winston.transports.File({
-      filename: __dirname + '/logs/debug.log'
+      filename: path.join(__dirname, '/logs/debug.log')
     })
   ],
   exceptionHandlers: [
     new winston.transports.Console(),
     new winston.transports.File({
-      filename: __dirname + '/logs/exceptions.log'
+      filename: path.join(__dirname, '/logs/exceptions.log')
     })
   ],
   exitOnError: false

@@ -5,6 +5,6 @@
 **********************************************************************/
 
 export interface IAmtHandler {
-    name : string;
-    AmtAction(request : Request, response : Response);
+  name: string
+  AmtAction: (request: Request, response: Response) => any
 }

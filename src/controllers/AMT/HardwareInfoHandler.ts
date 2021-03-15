@@ -7,22 +7,23 @@
 import { Response, Request } from 'express'
 import { logger as log } from '../../utils/logger'
 import { IAmtHandler } from '../../models/IAmtHandler'
-import { mpsMicroservice } from '../../mpsMicroservice'
-import { amtStackFactory, amtPort } from '../../utils/constants'
+import { MPSMicroservice } from '../../mpsMicroservice'
+import { amtPort } from '../../utils/constants'
 import { ErrorResponse } from '../../utils/amtHelper'
+import AMTStackFactory from '../../amt_libraries/amt-connection-factory.js'
 
 export class HardwareInfoHandler implements IAmtHandler {
-  mpsService: mpsMicroservice;
-  name: string;
-  amtFactory: any;
+  mpsService: MPSMicroservice
+  name: string
+  amtFactory: any
 
-  constructor (mpsService: mpsMicroservice) {
+  constructor (mpsService: MPSMicroservice) {
     this.name = 'HardwareInformation'
     this.mpsService = mpsService
-    this.amtFactory = new amtStackFactory(this.mpsService)
+    this.amtFactory = new AMTStackFactory(this.mpsService)
   }
 
-  async AmtAction (req: Request, res: Response) {
+  async AmtAction (req: Request, res: Response): Promise<void> {
     try {
       const payload = req.body.payload
       if (payload.guid) {
@@ -38,21 +39,22 @@ export class HardwareInfoHandler implements IAmtHandler {
             if (status != 200) {
               log.error(`Request failed during AMTHardware Information BatchEnum Exec for guid : ${payload.guid}.`)
               return res.status(status).send(ErrorResponse(status, `Request failed during AMTHardware Information BatchEnum Exec for guid : ${payload.guid}.`))
-            }
+            } else {
             // console.log("Hardware info of " + uuid + " sent.");
-            res.send(responses)
+              res.send(responses)
+            }
           })
         } else {
           res.set({ 'Content-Type': 'application/json' })
-          return res.status(404).send(ErrorResponse(404, `guid : ${payload.guid}`, 'device'))
+          res.status(404).send(ErrorResponse(404, `guid : ${payload.guid}`, 'device'))
         }
       } else {
         res.set({ 'Content-Type': 'application/json' })
-        return res.status(404).send(ErrorResponse(404, null, 'guid'))
+        res.status(404).send(ErrorResponse(404, null, 'guid'))
       }
     } catch (error) {
       log.error(`Exception in AMT HardwareInformation : ${error}`)
-      return res.status(500).send(ErrorResponse(500, 'Request failed during AMTHardware Information.'))
+      res.status(500).send(ErrorResponse(500, 'Request failed during AMTHardware Information.'))
     }
   }
 }

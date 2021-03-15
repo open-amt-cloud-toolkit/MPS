@@ -1,5 +1,5 @@
 {
-    "use_allowlist" : true,
+    "use_allowlist" : false,
     "common_name": "localhost",
     "port": 4433,
     "username": "standalone",
@@ -35,6 +35,10 @@
     "redis_host": "localhost",
     "redis_port": "6379",
     "redis_password": "G@ppm0ym",
+    "cors_origin":"http://localhost:4200",
+    "cors_headers":"Origin, X-Requested-With, Accept, X-MPS-API-Key, Content-Type, csrf-token, authorization",
+    "cors_methods":"*",
+    "connection_string": "postgresql://postgresadmin:admin123@localhost:5432/mpsdb",
     "mps_tls_config" : {
       "key": "../private/mpsserver-cert-private.key",
       "cert": "../private/mpsserver-cert-public.crt",

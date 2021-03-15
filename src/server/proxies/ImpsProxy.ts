@@ -1,6 +1,6 @@
 
 import { MpsProxy } from "./MpsProxy"
-import { mpsMicroservice } from "../../mpsMicroservice"
+import { MPSMicroservice } from "../../mpsMicroservice"
 
 export interface IMpsProxy {
     SetupCiraChannel(targetport, uuid);

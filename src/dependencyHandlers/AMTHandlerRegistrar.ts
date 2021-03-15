@@ -7,16 +7,16 @@
 import { IAmtHandler } from '../models/IAmtHandler'
 
 export class AMTHandlerRegistrar {
-    amtHandlers: any;
-    constructor () {
-      this.amtHandlers = {}
-    }
+  amtHandlers: any
+  constructor () {
+    this.amtHandlers = {}
+  }
 
-    registerHandler (handler : IAmtHandler) : void {
-      this.amtHandlers[handler.name] = handler
-    }
+  registerHandler (handler: IAmtHandler): void {
+    this.amtHandlers[handler.name] = handler
+  }
 
-    getHandler (name : string) : IAmtHandler {
-      return this.amtHandlers[name]
-    }
+  getHandler (name: string): IAmtHandler {
+    return this.amtHandlers[name]
+  }
 }

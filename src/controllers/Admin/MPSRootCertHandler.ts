@@ -12,7 +12,7 @@ import { Response, Request } from 'express'
 import { ErrorResponse } from '../../utils/amtHelper'
 
 export class MPSRootCertHandler implements IAdminHandler {
-  name: string;
+  name: string
 
   constructor () {
     this.name = 'MPSRootCertificate'
@@ -20,21 +20,17 @@ export class MPSRootCertHandler implements IAdminHandler {
 
   // Get list of CIRA connected devices.
   // For the server version of Mesh Commander, we send the computer list without credential and insertion credentials in the stream.
-  async adminAction (req: Request, res: Response) {
+  async adminAction (req: Request, res: Response): Promise<void> {
     try {
       const certPath = path.join(__dirname, '../../../private/root-cert-public.crt')
       if (fs.existsSync(certPath)) {
         res.send(fs.readFileSync(certPath))
       } else {
-        return res
-          .status(500)
-          .send(ErrorResponse(500, 'MPS root certificate does not exists.'))
+        res.status(500).send(ErrorResponse(500, 'MPS root certificate does not exists.'))
       }
     } catch (error) {
       log.error(`Exception while downloading MPS root certificate: ${error}`)
-      return res
-        .status(500)
-        .send(ErrorResponse(500, 'Request failed while downloading MPS root certificate.'))
+      res.status(500).send(ErrorResponse(500, 'Request failed while downloading MPS root certificate.'))
     }
   }
 }

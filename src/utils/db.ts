@@ -11,26 +11,22 @@
  * @version 0.0.1
  */
 
-import * as path from 'path'
-import * as fs from 'fs'
-import * as util from 'util'
-
+import fs from 'fs'
 import { configType } from '../models/Config'
 import { logger as log } from './logger'
 import { IDbProvider } from '../models/IDbProvider'
-import { loggers } from 'winston'
+import { Credentials } from '../models/models'
 
-const readFileAsync = util.promisify(fs.readFile)
-
-export class dataBase implements IDbProvider {
-  private config: configType;
-  private datapath: string;
-
+export class Database implements IDbProvider {
+  private readonly config: configType
+  private readonly datapath: string
   constructor (config: configType) {
     try {
       this.config = config
       this.datapath = config.data_path
-      if (!fs.existsSync(this.datapath)) { log.error(`DB Path is not valid. Check if ${this.datapath} exists.`) }
+      if (!fs.existsSync(this.datapath)) {
+        log.error(`DB Path is not valid. Check if ${this.datapath} exists.`)
+      }
     } catch (error) {
       log.error(error)
       throw error
@@ -38,14 +34,16 @@ export class dataBase implements IDbProvider {
   }
 
   // Mock up code, real deployment must use proper data providers
-  async getAllGUIDS () {
+  getAllGUIDS (): string[] {
     let guids = []
     try {
       if (this.datapath && fs.existsSync(this.datapath)) {
         const fileData = fs.readFileSync(this.datapath, 'utf8')
         const jsonData = JSON.parse(fileData)
         // console.log(jsonData)
-        if (Array.isArray(jsonData.allowlist_guids)) { guids = guids.concat(jsonData.allowlist_guids) }
+        if (Array.isArray(jsonData.allowlist_guids)) {
+          guids = guids.concat(jsonData.allowlist_guids)
+        }
 
         log.silly(`Guids - ${JSON.stringify(guids)}`)
       }
@@ -56,13 +54,15 @@ export class dataBase implements IDbProvider {
   }
 
   // Check: why orgs
-  async getAllOrgs () {
+  getAllOrgs (): string[] {
     let orgs = []
     try {
       if (this.datapath && fs.existsSync(this.datapath)) {
         const fileData = fs.readFileSync(this.datapath, 'utf8')
         const jsonData = JSON.parse(fileData)
-        if (Array.isArray(jsonData.allowlist_orgs)) { orgs = orgs.concat(jsonData.allowlist_orgs) }
+        if (Array.isArray(jsonData.allowlist_orgs)) {
+          orgs = orgs.concat(jsonData.allowlist_orgs)
+        }
         log.silly(`Orgs - ${JSON.stringify(orgs)}`)
       }
     } catch (error) {
@@ -71,8 +71,8 @@ export class dataBase implements IDbProvider {
     return orgs
   }
 
-  async getAllCredentials () {
-    let credentials = {}
+  getAllCredentials (): Credentials {
+    let credentials: Credentials = {}
     try {
       if (this.datapath && fs.existsSync(this.datapath)) {
         const fileData = fs.readFileSync(this.datapath, 'utf8')
@@ -91,10 +91,10 @@ export class dataBase implements IDbProvider {
     return credentials
   }
 
-  async getCredentialsForGuid (guid) {
+  getCredentialsForGuid (guid): any {
     let credentials = {}
     try {
-      credentials = await this.getAllCredentials()
+      credentials = this.getAllCredentials()
     } catch (error) {
       log.error(`Exception in getCredentialsForGuid: ${error}`)
       credentials = {}
@@ -103,9 +103,9 @@ export class dataBase implements IDbProvider {
   }
 
   // get all credentials in credentials.json file
-  async getAllAmtCredentials () {
+  getAllAmtCredentials (): Credentials {
     try {
-      const cred = await this.getAllCredentials()
+      const cred = this.getAllCredentials()
       // logger.debug(`All AMT credentials: ${JSON.stringify(cred, null, 4)}`);
       return cred
     } catch (error) {
@@ -115,12 +115,13 @@ export class dataBase implements IDbProvider {
   }
 
   // check if a GUID is allowed to connect
-  async IsGUIDApproved (guid, cb) {
+  IsGUIDApproved (guid, cb): void {
     try {
       let result = false
-      if (this.config && this.config.use_allowlist) {
-        const guids = await this.getAllGUIDS()
-        if (guids.indexOf(guid) >= 0) {
+
+      if (this.config?.use_allowlist) {
+        const guids = this.getAllGUIDS()
+        if (guids.includes(guid)) {
           result = true
           log.silly('Guid found.')
         }
@@ -136,12 +137,12 @@ export class dataBase implements IDbProvider {
   }
 
   // check if a Organization is allowed to connect
-  async IsOrgApproved (org, cb) {
+  IsOrgApproved (org, cb): void {
     try {
       let result = false
-      if (this.config && this.config.use_allowlist) {
-        const orgs = await this.getAllOrgs()
-        if (orgs.indexOf(org) >= 0) {
+      if (this.config?.use_allowlist) {
+        const orgs = this.getAllOrgs()
+        if (orgs.includes(org)) {
           result = true
         }
       } else {
@@ -156,15 +157,15 @@ export class dataBase implements IDbProvider {
   }
 
   // CIRA auth
-  async CIRAAuth (guid, username, password, func) {
+  CIRAAuth (guid, username, password, func): void {
     try {
       let result = false
-      const cred = await this.getCredentialsForGuid(guid)
-      //log.info(cred)
-      if (cred && cred.mpsuser == username && cred.mpspass == password) {
+      const cred = this.getCredentialsForGuid(guid)
+      log.info(cred)
+      if (cred && cred.mpsuser === username && cred.mpspass === password) {
         result = true
       } else if (cred && this.config.use_global_mps_credentials) {
-        if (this.config.username == username && this.config.pass == password) {
+        if (this.config.username === username && this.config.pass === password) {
           result = true
           log.silly(`CIRAAuth successful. ${username} ${password}`)
         }
@@ -175,10 +176,10 @@ export class dataBase implements IDbProvider {
     }
   }
 
-  async getAmtPassword (uuid) {
+  getAmtPassword (uuid): any {
     let result = ['admin', '']
     try {
-      const amtcreds = await this.getCredentialsForGuid(uuid)
+      const amtcreds = this.getCredentialsForGuid(uuid)
       if (amtcreds) {
         result = [amtcreds.amtuser, amtcreds.amtpass]
       }

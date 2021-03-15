@@ -7,7 +7,6 @@ import { configType, certificatesType } from './models/Config'
 import { webServer } from './server/webserver'
 import { mpsServer } from './server/mpsserver'
 import { logger as log } from './utils/logger'
-import { dataBase } from './utils/db'
 import { IDbProvider } from './models/IDbProvider'
 import { getDistributedKV } from './utils/IDistributedKV'
 import { MpsProxy } from './server/proxies/MpsProxy';
@@ -15,7 +14,7 @@ import { CiraConnectionFactory } from './CiraConnectionFactory';
 import { CiraChannelFactory } from './CiraChannelFactory';
 import session from 'express-session';
 
-export class mpsMicroservice {
+export class MPSMicroservice {
   mpsserver : any;
   webserver : any;
   config: configType;
@@ -114,7 +113,7 @@ export class mpsMicroservice {
     }
   }
 
-  CIRAConnected (guid) {
+  CIRAConnected (guid: string): void {
     log.info(`CIRA connection established for ${guid}`)
 
     if ('mps' === this.config.startup_mode) {
@@ -128,7 +127,7 @@ export class mpsMicroservice {
     }
   }
 
-  CIRADisconnected(guid) {
+  CIRADisconnected (guid: string): void {
     log.info(`Main:CIRA connection closed for ${guid}`)
 
     if ('mps' === this.config.startup_mode) {

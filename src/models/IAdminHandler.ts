@@ -5,6 +5,6 @@
 **********************************************************************/
 
 export interface IAdminHandler {
-    name : string;
-    adminAction(request : Request, response: Response);
+  name: string
+  adminAction: (request: Request, response: Response) => any
 }
