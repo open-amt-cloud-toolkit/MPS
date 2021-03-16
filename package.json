@@ -16,6 +16,7 @@
   "dependencies": {
     "express": "^4.17.1",
     "express-session": "^1.17.0",
+    "express-validator": "^6.10.0",
     "node-forge": "^0.10.0",
     "node-vault": "^0.9.21",
     "pg": "^8.5.1",
